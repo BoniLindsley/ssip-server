@@ -85,52 +85,11 @@ fn main() {
         sample_rate: cpal::SampleRate(16_000),
         buffer_size: cpal::BufferSize::Default,
     };
-    //let copied_data = pcm_data.leak();
-    //let mut remaining_data = &*copied_data;
-
-    //let data_sender =
-    //    move |data: &mut cpal::Data, _: &cpal::OutputCallbackInfo| {
-    //        let n_to_copy =
-    //            std::cmp::min(data.len(), remaining_data.len());
-    //        let data_slice =
-    //            data.as_slice_mut().expect("Unmatched sample size");
-    //        data_slice[..n_to_copy]
-    //            .copy_from_slice(&remaining_data[..n_to_copy]);
-    //        remaining_data = &remaining_data[n_to_copy..];
-    //        if remaining_data.is_empty() {
-    //            std::process::exit(0);
-    //        }
-    //    };
-    let (input, mut output) = rodio::dynamic_mixer::mixer::<i16>(
-        config.channels,
-        config.sample_rate.0,
-    );
-    //let input = std::sync::Arc::new(
-    //    rodio::dynamic_mixer::DynamicMixerController {
-    //        has_pending: std::sync::atomic::AtomicBool::new(false),
-    //        pending_sources: std::sync::Mutex::new(Vec::new()),
-    //        channels: config.channels,
-    //        sample_rate: config.sample_rate.0,
-    //    },
-    //);
-
-    //let mut output = rodio::dynamic_mixer::DynamicMixer {
-    //    current_sources: Vec::with_capacity(16),
-    //    input: input.clone(),
-    //    //sample_count: 0,
-    //    //still_pending: vec![],
-    //    //still_current: vec![],
-    //};
-    let buffer = rodio::buffer::SamplesBuffer::new(
-        config.channels,
-        config.sample_rate.0,
-        pcm_data,
-    );
-    input.add(buffer);
+    let mut buffer = pcm_data.into_iter();
     let data_sender =
         move |data: &mut cpal::Data, _: &cpal::OutputCallbackInfo| {
             data.as_slice_mut().unwrap().iter_mut().for_each(|d| {
-                *d = output
+                *d = buffer //output
                     .next() /*map(|s| s.to_i16()).*/
                     .unwrap_or(0i16)
             })
