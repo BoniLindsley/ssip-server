@@ -48,7 +48,7 @@ impl Output {
         };
         Ok(Output { device, config })
     }
-    pub fn queue(
+    pub fn play(
         &self,
         source: Vec<i16>,
     ) -> Result<(), Box<dyn std::error::Error>> {

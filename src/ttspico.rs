@@ -1,29 +1,29 @@
-pub struct TTSPicoError {
+pub struct Error {
     description: String,
 }
-impl From<ttspico::PicoError> for TTSPicoError {
-    fn from(source: ttspico::PicoError) -> TTSPicoError {
+impl From<ttspico::PicoError> for Error {
+    fn from(source: ttspico::PicoError) -> Error {
         let description = source.descr;
-        TTSPicoError { description }
+        Error { description }
     }
 }
-impl std::error::Error for TTSPicoError {
+impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 }
-impl std::fmt::Debug for TTSPicoError {
+impl std::fmt::Debug for Error {
     fn fmt(
         &self,
         formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         formatter
-            .debug_struct("TTSPicoError")
+            .debug_struct("Error")
             .field("description", &self.description)
             .finish()
     }
 }
-impl std::fmt::Display for TTSPicoError {
+impl std::fmt::Display for Error {
     fn fmt(
         &self,
         formatter: &mut std::fmt::Formatter<'_>,
@@ -32,15 +32,16 @@ impl std::fmt::Display for TTSPicoError {
     }
 }
 
-pub struct TTSPicoBackend {
+pub struct Synthesiser {
     engine: ttspico::Engine,
 }
-impl TTSPicoBackend {
-    pub fn new(
-        memory_size: usize,
-        text_analysis_data_path: &str,
-        speech_generation_data_path: &str,
-    ) -> Result<TTSPicoBackend, TTSPicoError> {
+impl Synthesiser {
+    pub fn new() -> Result<Synthesiser, Error> {
+        let memory_size = 4 * 1024 * 1024;
+        let text_analysis_data_path =
+            "/usr/share/pico/lang/en-GB_ta.bin";
+        let speech_generation_data_path =
+            "/usr/share/pico/lang/en-GB_kh0_sg.bin";
         let system = ttspico::System::new(memory_size)?;
         let text_analysis_data = ttspico::System::load_resource(
             std::rc::Rc::clone(&system),
@@ -54,19 +55,19 @@ impl TTSPicoBackend {
         voice.borrow_mut().add_resource(text_analysis_data)?;
         voice.borrow_mut().add_resource(speech_generation_data)?;
         let engine = unsafe { ttspico::Voice::create_engine(voice)? };
-        Ok(TTSPicoBackend { engine })
+        Ok(Synthesiser { engine })
     }
 
+    // Returns a 16-bit signed 16kHz PCM buffer.
     pub fn generate(
         &mut self,
         source: &[u8],
-    ) -> Result<Vec<i16>, TTSPicoError> {
+    ) -> Result<Vec<i16>, Error> {
         let mut remaining = source;
         while remaining.len() > 0 {
             let n_put = self.engine.put_text(remaining)?;
             remaining = &remaining[n_put..];
         }
-        // 16-bit signed 16kHz PCM.
         let mut pcm_data: Vec<i16> = vec![0i16; 0];
         let mut pcm_buf = [0i16; 1024];
         loop {

@@ -1,5 +1,4 @@
-mod cpal;
-mod ttspico;
+use ssip_server;
 
 type ExitCode = i32;
 type RunResult = Result<(), Box<dyn std::error::Error>>;
@@ -21,19 +20,7 @@ fn parse_run_result(result: RunResult) -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let memory_size = 4 * 1024 * 1024;
-    let text_analysis_data_path = "/usr/share/pico/lang/en-GB_ta.bin";
-    let speech_generation_data_pata =
-        "/usr/share/pico/lang/en-GB_kh0_sg.bin";
-    let mut ttspico_backend = ttspico::TTSPicoBackend::new(
-        memory_size,
-        text_analysis_data_path,
-        speech_generation_data_pata,
-    )?;
-    let source = b"1, 2, 3, Hello Rust!\0";
-    // An audio buffer (16-bit signed PCM @ 16kHz).
-    let pcm_data = ttspico_backend.generate(source)?;
-    let cpal_output = cpal::Output::new()?;
-    cpal_output.queue(pcm_data)?;
+    let mut output_module = ssip_server::OutputModule::new()?;
+    output_module.speak("1, 2, 3, Hello Rust!\0")?;
     Ok(())
 }
