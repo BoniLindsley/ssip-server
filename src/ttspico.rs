@@ -68,6 +68,7 @@ impl Synthesiser {
             let n_put = self.engine.put_text(remaining)?;
             remaining = &remaining[n_put..];
         }
+        self.engine.flush()?;
         let mut pcm_data: Vec<i16> = vec![0i16; 0];
         let mut pcm_buf = [0i16; 1024];
         loop {
